@@ -22,10 +22,20 @@ def main():
         action = actions()
         if action == "Search card by name":
             search_by_name()
+        if action == "Explore Magic the Gathering":
+            explore_MTG()
         if action == None:
             break
     print(bye_text)
     quit()
+
+
+def mill():
+    """mill progress bar"""
+    with indent(2, quote=(" |")):
+        puts(colored.blue("Fetching..."))
+        for i in progress.mill(range(10)):
+            sleep(random() * 0.2)
 
 
 def actions():
@@ -34,8 +44,7 @@ def actions():
         message="Select an action:",
         choices=[
             "Search card by name",
-            "Find card set",
-            "Show current most expensive cards",
+            "Explore Magic the Gathering",
             "Generate random card name",
             Choice(value=None, name="Exit"),
         ],
@@ -50,10 +59,7 @@ def search_by_name():
         message="Enter card name:",
     ).execute()
 
-    with indent(2, quote=(" |")):
-        puts(colored.blue("Fetching..."))
-        for i in progress.mill(range(10)):
-            sleep(random() * 0.2)
+    mill()
 
     response = requests.get("https://api.scryfall.com/cards/named?fuzzy=" + c_name)
     result = response.json()
@@ -73,9 +79,7 @@ def search_by_name():
             puts(colored.green(result["set_name"]))
             puts(colored.green(rarity.capitalize()))
             puts(colored.green(result["released_at"]))
-        price = inquirer.confirm(
-            message="Would you like to fetch the card price?", default=True
-        ).execute()
+        price = inquirer.confirm(message="Fetch card price?", default=True).execute()
         if price:
             prices = result["prices"]
             # Make sure price is listed and valid
@@ -86,6 +90,108 @@ def search_by_name():
             else:
                 with indent(4, quote=(" |")):
                     puts(colored.green("Price not listed"))
+
+
+def explore_MTG():
+    action = inquirer.select(
+        message="Choose category",
+        choices=[
+            "Land types",
+            "Creature types",
+            "Mana symbols",
+            "Other symbols",
+            "Unfinity symbols",
+        ],
+        default="Land types",
+    ).execute()
+
+    if action == "Land types":
+        land()
+    if action == "Creature types":
+        creatures()
+    if action == "Mana symbols":
+        symbols(action)
+    if action == "Other symbols":
+        symbols(action)
+    if action == "Unfinity symbols":
+        symbols(action)
+
+
+def land():
+    """Search land types"""
+    mill()
+
+    response = requests.get("https://api.scryfall.com/catalog/land-types")
+    result = response.json()
+
+    for i in result["data"]:
+        with indent(4, quote=(" |")):
+            puts(colored.green(i))
+    return
+
+
+def creatures():
+    """Search creature types"""
+
+    mill()
+
+    response = requests.get("https://api.scryfall.com/catalog/creature-types")
+    result = response.json()
+
+    items = result["total_values"]
+    start = 0
+    end = 13
+    while end <= items:
+        for i in range(start, end):
+            if i != items:
+                with indent(4, quote=(" |")):
+                    puts(colored.green(result["data"][i]))
+            else:
+                break
+        if end + 13 == items:
+            break
+        else:
+            next_page = inquirer.confirm(message="Load more?", default=True).execute()
+            if next_page == True:
+                start += 13
+                end += 13
+            else:
+                break
+    return
+
+
+def symbols(action):
+    """Search MTG symbols"""
+
+    mill()
+
+    response = requests.get("https://api.scryfall.com/symbology")
+    result = response.json()
+
+    if action == "Mana symbols":
+        for i in result["data"]:
+            if i["represents_mana"] == True and i["funny"] == False:
+                with indent(4, quote=(" |")):
+                    symbol = i["symbol"]
+                    english = i["english"]
+                    puts(colored.green("%s - %s" % (symbol, english)))
+
+    if action == "Other symbols":
+        for i in result["data"]:
+            if i["represents_mana"] == False and i["funny"] == False:
+                with indent(4, quote=(" |")):
+                    symbol = i["symbol"]
+                    english = i["english"]
+                    puts(colored.green("%s - %s" % (symbol, english)))
+
+    if action == "Unfinity symbols":
+        for i in result["data"]:
+            if i["funny"] == True:
+                with indent(4, quote=(" |")):
+                    symbol = i["symbol"]
+                    english = i["english"]
+                    puts(colored.green("%s - %s" % (symbol, english)))
+    return
 
 
 if __name__ == "__main__":

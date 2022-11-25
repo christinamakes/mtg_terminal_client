@@ -7,6 +7,7 @@ from clint.textui import puts, indent, colored
 from time import sleep
 from random import random
 from clint.textui import progress
+import zmq
 
 
 def main():
@@ -24,6 +25,10 @@ def main():
             search_by_name()
         if action == "Explore Magic the Gathering":
             explore_MTG()
+        if action == "Generate random card name":
+            # magic_rng_card()
+            with indent(4, quote=(" |")):
+                puts(colored.green(magic_rng_card()))
         if action == None:
             break
     print(bye_text)
@@ -51,6 +56,21 @@ def actions():
         default="Search by card name",
     ).execute()
     return action
+
+
+# PARTNER'S MICROSERVICE
+def magic_rng_card():
+    context = zmq.Context()
+
+    #  Socket to talk to server
+    socket = context.socket(zmq.REQ)
+    socket.connect("tcp://localhost:5555")
+
+    socket.send_string("Generating random card name...")
+
+    #  Get the reply.
+    message = socket.recv()
+    return message.decode("utf-8")
 
 
 def search_by_name():

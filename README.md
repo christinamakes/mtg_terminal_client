@@ -1,6 +1,6 @@
 # MTG Terminal Client
 
-#### Python
+#### Written in Python
 
 #### A terminal client for the card game Magic the Gathering. Users can explore the tool to learn more about the card types and game rules. Tool also fetches the current price of any card in USD using fuzzy text match.
 
